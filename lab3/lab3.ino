@@ -82,6 +82,9 @@ void setup()
         ei_printf("ERR: Could not allocate audio buffer (size %d), this could be due to the window length of your model\r\n", EI_CLASSIFIER_RAW_SAMPLE_COUNT);
         return;
     }
+
+    // To allow to blink
+    pinMode(LED_BUILTIN, OUTPUT);
 }
 
 /**
@@ -100,10 +103,17 @@ void loop()
     signal.get_data = &microphone_audio_signal_get_data;
     ei_impulse_result_t result = {0};
 
-    EI_IMPULSE_ERROR r = run_classifier_continuous(&signal, &result, debug_nn);
+    EI_IMPULSE_ERROR r = run_classifier_continuous(&signal, &result, debug_nn, false);
     if (r != EI_IMPULSE_OK) {
         ei_printf("ERR: Failed to run classifier (%d)\n", r);
         return;
+    }
+
+    if (result.classification[2].value >= 0.99) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(50);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(50);
     }
 
     if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW)) {
